@@ -7,7 +7,7 @@ if (!password) {
   process.exit(1)
 }
 
-const url = `mongodb+srv://AiTrinh:${password}@cluster0.upmsnpj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+const url = `mongodb+srv://AiTrinh:${password}@cluster0.upmsnpj.mongodb.net/phonebook?retryWrites=true&w=majority&appName=Cluster0`
 
 
 mongoose.set('strictQuery', false)
