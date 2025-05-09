@@ -24,7 +24,14 @@ mongoose.connect(url)
     },
     number: {
       type: String,
-      required: [true, 'Number is required']
+      minlength: [8, 'Phone number must be at least 8 characters long'],
+      validate: {
+        validator: function (v) {
+          return phoneRegex.test(v)
+        },
+        message: props => `${props.value} is not a valid phone number! Format should be XX-XXXXXXX or XXX-XXXXXXX`
+      },
+      required: [true, 'Phone number is required']
     }
   })
 
