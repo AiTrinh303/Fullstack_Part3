@@ -10,11 +10,12 @@ dotenv.config()
 
 mongoose.set('strictQuery', false)
 
-mongoose.connect(process.env.MONGODB_URI)
+mongoose
+  .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB')
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('Error connecting to MongoDB:', error.message)
   })
 
@@ -22,11 +23,13 @@ const app = express()
 app.use(express.json())
 app.use(cors())
 
+morgan.token('body', (req) =>
+  req.method === 'POST' ? JSON.stringify(req.body) : ''
+)
 
-morgan.token('body', (req) => req.method === 'POST' ? JSON.stringify(req.body) : '')
-
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
-
+app.use(
+  morgan(':method :url :status :res[content-length] - :response-time ms :body')
+)
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -35,55 +38,49 @@ app.use(express.static(path.join(__dirname, 'dist')))
 
 const PORT = process.env.PORT || 3001
 
-
-
 app.get('/api/persons', (req, res, next) => {
   Person.find({})
-    .then(persons => {
+    .then((persons) => {
       res.json(persons)
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
 app.get('/info', (req, res, next) => {
   Person.countDocuments({})
-    .then(count => {
+    .then((count) => {
       res.send(`
         <p>Phonebook has info for ${count} people</p>
         <p>${new Date()}</p>
       `)
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
-
 
 app.get('/api/persons/:id', (req, res, next) => {
   Person.findById(req.params.id)
-    .then(person => {
+    .then((person) => {
       if (person) {
         res.json(person)
       } else {
         res.status(404).send({ error: 'Person not found' })
       }
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-  
 app.delete('/api/persons/:id', (req, res, next) => {
   Person.findByIdAndRemove(req.params.id)
-    .then(result => {
+    .then((result) => {
       if (result) {
         res.status(204).end()
       } else {
         res.status(404).send({ error: 'Person not found' })
       }
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
-
-  
 app.post('/api/persons', (req, res, next) => {
   const body = req.body
 
@@ -92,7 +89,7 @@ app.post('/api/persons', (req, res, next) => {
   }
 
   Person.findOne({ name: body.name })
-    .then(existing => {
+    .then((existing) => {
       if (existing) {
         return res.status(400).json({ error: 'Name must be unique' })
       }
@@ -102,11 +99,11 @@ app.post('/api/persons', (req, res, next) => {
         number: body.number,
       })
 
-      return person.save().then(savedPerson => {
+      return person.save().then((savedPerson) => {
         res.status(201).json(savedPerson)
       })
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
 app.put('/api/persons/:id', (req, res, next) => {
@@ -116,36 +113,33 @@ app.put('/api/persons/:id', (req, res, next) => {
   const opts = { new: true, runValidators: true, context: 'query' }
 
   Person.findByIdAndUpdate(req.params.id, update, opts)
-    .then(updatedPerson => {
+    .then((updatedPerson) => {
       if (updatedPerson) {
         res.json(updatedPerson)
       } else {
         res.status(404).send({ error: 'Person not found' })
       }
     })
-    .catch(error => next(error))
+    .catch((error) => next(error))
 })
 
+// Fallback for SPA routing
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
+})
 
-  // Fallback for SPA routing
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
-  })
+app.use((error, req, res, next) => {
+  console.error(error.message)
 
-  app.use((error, req, res, next) => {
-    console.error(error.message)
-  
-    if (error.name === 'CastError') {
-      return res.status(400).send({ error: 'Malformed ID' })
-    } else if (error.name === 'ValidationError') {
-      return res.status(400).json({ error: error.message })
-    }
-  
-    next(error)
-  })
-  
-  
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-  })
-  
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'Malformed ID' })
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).json({ error: error.message })
+  }
+
+  next(error)
+})
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})

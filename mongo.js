@@ -3,12 +3,13 @@ import mongoose from 'mongoose'
 const password = process.argv[2]
 
 if (!password) {
-  console.log('Please provide the password as an argument: node mongo.js <password>')
+  console.log(
+    'Please provide the password as an argument: node mongo.js <password>'
+  )
   process.exit(1)
 }
 
 const url = `mongodb+srv://AiTrinh:${password}@cluster0.upmsnpj.mongodb.net/phonebook?retryWrites=true&w=majority&appName=Cluster0`
-
 
 mongoose.set('strictQuery', false)
 mongoose.connect(url)
@@ -24,9 +25,9 @@ const args = process.argv
 
 if (args.length === 3) {
   // List all entries
-  Person.find({}).then(result => {
+  Person.find({}).then((result) => {
     console.log('phonebook:')
-    result.forEach(person => {
+    result.forEach((person) => {
       console.log(`${person.name} ${person.number}`)
     })
     mongoose.connection.close()
